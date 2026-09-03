@@ -11,31 +11,36 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class SqliteKeyValueRepository implements KeyValueRepository {
-    private final Connection connection;
     private final ExecutorService executor;
+    private final CompletableFuture<Connection> connectionFuture;
 
-    public SqliteKeyValueRepository(String databasePath) throws SQLException {
-        this.connection = DriverManager.getConnection("jdbc:sqlite:" + databasePath);
+    public SqliteKeyValueRepository(String databasePath) {
         this.executor = Executors.newSingleThreadExecutor(r -> {
             Thread thread = new Thread(r, "savagepvp-sqlite");
             thread.setDaemon(true);
             return thread;
         });
-        initialize();
+        this.connectionFuture = CompletableFuture.supplyAsync(() -> open(databasePath), executor);
     }
 
-    private void initialize() throws SQLException {
-        try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS key_values (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+    private Connection open(String databasePath) {
+        try {
+            Connection connection = DriverManager.getConnection("jdbc:sqlite:" + databasePath);
+            try (Statement statement = connection.createStatement()) {
+                statement.executeUpdate("CREATE TABLE IF NOT EXISTS key_values (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+            }
+            return connection;
+        } catch (SQLException exception) {
+            throw new RepositoryException("Unable to initialize SQLite", exception);
         }
     }
 
     @Override
     public CompletableFuture<Void> save(String key, String value) {
-        return CompletableFuture.runAsync(() -> {
-            String sql = "INSERT INTO key_values(key, value) VALUES(?, ?) " +
-                    "ON CONFLICT(key) DO UPDATE SET value = excluded.value";
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+        return connectionFuture.thenRunAsync(() -> {
+            try (PreparedStatement statement = connection().prepareStatement(
+                    "INSERT INTO key_values(key, value) VALUES(?, ?) " +
+                    "ON CONFLICT(key) DO UPDATE SET value = excluded.value")) {
                 statement.setString(1, key);
                 statement.setString(2, value);
                 statement.executeUpdate();
@@ -47,8 +52,8 @@ public final class SqliteKeyValueRepository implements KeyValueRepository {
 
     @Override
     public CompletableFuture<Optional<KeyValueEntry>> find(String key) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (PreparedStatement statement = connection.prepareStatement(
+        return connectionFuture.thenApplyAsync(ignored -> {
+            try (PreparedStatement statement = connection().prepareStatement(
                     "SELECT key, value FROM key_values WHERE key = ?")) {
                 statement.setString(1, key);
                 try (ResultSet result = statement.executeQuery()) {
@@ -63,14 +68,12 @@ public final class SqliteKeyValueRepository implements KeyValueRepository {
 
     @Override
     public CompletableFuture<List<KeyValueEntry>> findAll() {
-        return CompletableFuture.supplyAsync(() -> {
+        return connectionFuture.thenApplyAsync(ignored -> {
             List<KeyValueEntry> entries = new ArrayList<>();
-            try (PreparedStatement statement = connection.prepareStatement(
+            try (PreparedStatement statement = connection().prepareStatement(
                     "SELECT key, value FROM key_values ORDER BY key COLLATE NOCASE ASC");
                  ResultSet result = statement.executeQuery()) {
-                while (result.next()) {
-                    entries.add(new KeyValueEntry(result.getString("key"), result.getString("value")));
-                }
+                while (result.next()) entries.add(new KeyValueEntry(result.getString("key"), result.getString("value")));
                 return entries;
             } catch (SQLException exception) {
                 throw new RepositoryException("Unable to list key/value entries", exception);
@@ -78,13 +81,14 @@ public final class SqliteKeyValueRepository implements KeyValueRepository {
         }, executor);
     }
 
+    private Connection connection() { return connectionFuture.join(); }
+
     @Override
     public void close() {
-        executor.shutdown();
-        try {
-            connection.close();
-        } catch (SQLException ignored) {
+        if (connectionFuture.isDone() && !connectionFuture.isCompletedExceptionally()) {
+            try { connectionFuture.join().close(); } catch (SQLException ignored) { }
         }
+        executor.shutdownNow();
     }
 
     public static final class RepositoryException extends RuntimeException {
