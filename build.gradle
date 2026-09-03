@@ -8,8 +8,10 @@ version = '1.0.0'
 def targetJava = 21
 
 repositories {
-    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
     mavenCentral()
+    maven {
+        url = 'https://hub.spigotmc.org/nexus/content/groups/public/'
+    }
 }
 
 dependencies {
