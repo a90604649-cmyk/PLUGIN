@@ -8,3 +8,7 @@ commands:
     description: Gestiona registros clave/valor.
     usage: /prueba <save|view|list> ...
     aliases: [testkv]
+permissions:
+  prueba.use:
+    description: Permite utilizar /prueba.
+    default: op
