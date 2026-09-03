@@ -1,1 +1,11 @@
-Este plugin es para la prueba tecnica de SavagePvP y sirve para guardar datos usando una key y una value, la key solo puede tener letras numeros y guion bajo y no puede pasar de 16 caracteres, mientras que la value puede llevar cualquier cosa. El comando principal es /prueba y tiene tres funciones, save sirve para guardar o actualizar un dato usando /prueba save <key> <value>, view sirve para ver un dato usando /prueba view <key> y list sirve para ver todos los datos en una interfaz con paginas. Para guardar los datos se usa SQLite y las consultas se hacen de forma asincrona para no bloquear el servidor, tambien se separo la logica en repository service comandos y la parte visual para que sea mas facil de mantener. Se usa Java 21 y Gradle 8.10, para compilar solo hay que ejecutar gradle clean build y el archivo jar queda en la carpeta build/libs, despues se coloca en la carpeta plugins del servidor. La key se valida antes de guardarla y si no cumple las reglas se muestra un mensaje indicando el error.
+Este plugin lo desarrollé para la prueba técnica de SavagePvP y básicamente sirve para guardar datos mediante clave y valor. La clave tiene sus reglas: solo permite letras, números y guion bajo, con un máximo de 16 caracteres. El valor, en cambio, puede ser cualquier texto que quieras.
+
+El comando principal es `/prueba` y maneja tres funciones:
+
+- `save`: sirve para guardar o actualizar un dato.
+- `view`: es para consultar un dato en concreto.
+- `list`: abre una interfaz con paginación para ver todos los registros almacenados de forma cómoda.
+
+En la parte técnica, usé SQLite para guardar todo y me aseguré de que las consultas corran de forma asíncrona para no congelar el servidor ni provocar lag. Además, estructuré el proyecto separando la lógica en *repository*, *service*, comandos y la parte visual para que el código quede limpio y sea fácil de mantener a futuro.
+
+Está hecho con Java 21 y Gradle 8.10. Para compilarlo solo hay que ejecutar `gradle clean build`, buscar el archivo `.jar` en la carpeta `build/libs` y moverlo a la carpeta `plugins` del servidor. También le agregué una validación previa a la clave para que, si no cumple con el formato o la longitud, muestre un mensaje de error claro avisando qué falló.
