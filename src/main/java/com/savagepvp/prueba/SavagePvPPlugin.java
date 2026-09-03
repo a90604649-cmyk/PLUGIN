@@ -10,11 +10,9 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
-import java.sql.SQLException;
 
 public final class SavagePvPPlugin extends JavaPlugin {
     private KeyValueRepository repository;
-    private KeyValueService keyValueService;
 
     @Override
     public void onEnable() {
@@ -24,17 +22,9 @@ public final class SavagePvPPlugin extends JavaPlugin {
             return;
         }
 
-        saveDefaultConfig();
-        String fileName = getConfig().getString("storage.file", "data.db");
-        try {
-            repository = new SqliteKeyValueRepository(new File(getDataFolder(), fileName).getPath());
-        } catch (SQLException exception) {
-            getLogger().severe("No se pudo inicializar SQLite: " + exception.getMessage());
-            getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
-
-        keyValueService = new KeyValueService(repository, new KeyValidator());
+        // The repository opens SQLite and creates its schema on its dedicated executor.
+        repository = new SqliteKeyValueRepository(new File(getDataFolder(), "data.db").getPath());
+        KeyValueService service = new KeyValueService(repository, new KeyValidator());
         EntryListGui gui = new EntryListGui(this);
         getServer().getPluginManager().registerEvents(gui, this);
 
@@ -44,7 +34,7 @@ public final class SavagePvPPlugin extends JavaPlugin {
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        PruebaCommand executor = new PruebaCommand(keyValueService, gui);
+        PruebaCommand executor = new PruebaCommand(service, gui);
         command.setExecutor(executor);
         command.setTabCompleter(executor);
         getLogger().info("SavagePvP-Prueba habilitado (Java 21, SQLite asíncrono).");
@@ -53,9 +43,5 @@ public final class SavagePvPPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         if (repository != null) repository.close();
-    }
-
-    public KeyValueService getKeyValueService() {
-        return keyValueService;
     }
 }
