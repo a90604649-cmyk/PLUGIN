@@ -1,0 +1,10 @@
+name: SavagePvP-Prueba
+version: ${version}
+main: com.savagepvp.prueba.SavagePvPPlugin
+author: SavagePvP
+description: Technical test - asynchronous key/value storage with visual listing.
+commands:
+  prueba:
+    description: Gestiona registros clave/valor.
+    usage: /prueba <save|view|list> ...
+    aliases: [testkv]
