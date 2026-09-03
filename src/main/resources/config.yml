@@ -1,7 +1,0 @@
-storage:
-  file: data.db
-
-messages:
-  prefix: '&8[&6Prueba&8] &r'
-  no-permission: '&cNo tienes permiso para usar este comando.'
-  player-only: '&cEste comando requiere un jugador.'
