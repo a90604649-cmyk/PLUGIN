@@ -1,6 +1,6 @@
 name: SavagePvP-Prueba
 version: ${version}
-main: com.savagepvp.prueba.SavagePvPPlugin
+main: SavagePvPPlugin
 author: SavagePvP
 description: Technical test - asynchronous key/value storage with visual listing.
 commands:
