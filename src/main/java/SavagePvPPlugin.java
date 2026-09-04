@@ -29,7 +29,7 @@ public final class SavagePvPPlugin extends JavaPlugin {
         PruebaCommand executor = new PruebaCommand(service, gui);
         command.setExecutor(executor);
         command.setTabCompleter(executor);
-        getLogger().info("SavagePvP-Prueba habilitado (Java 21, SQLite asíncrono).");
+        getLogger().info("SavagePvP-Prueba habilitado (Java 8+ compatible, SQLite asíncrono).");
     }
 
     @Override
