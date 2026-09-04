@@ -26,11 +26,16 @@ public final class SqliteKeyValueRepository implements KeyValueRepository {
 
     private Connection open(String databasePath) {
         try {
+            // The JDBC driver is bundled inside the plugin JAR. Explicitly loading it
+            // keeps DriverManager discovery reliable when the JAR is built as a fat JAR.
+            Class.forName("org.sqlite.JDBC");
             Connection connection = DriverManager.getConnection("jdbc:sqlite:" + databasePath);
             try (Statement statement = connection.createStatement()) {
                 statement.executeUpdate("CREATE TABLE IF NOT EXISTS key_values (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
             }
             return connection;
+        } catch (ClassNotFoundException exception) {
+            throw new RepositoryException("SQLite JDBC driver is not available", exception);
         } catch (SQLException exception) {
             throw new RepositoryException("Unable to initialize SQLite", exception);
         }
