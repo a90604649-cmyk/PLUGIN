@@ -45,8 +45,7 @@ public final class SqliteKeyValueRepository implements KeyValueRepository {
     public CompletableFuture<Void> save(String key, String value) {
         return connectionFuture.thenRunAsync(() -> {
             try (PreparedStatement statement = connection().prepareStatement(
-                    "INSERT INTO key_values(key, value) VALUES(?, ?) " +
-                    "ON CONFLICT(key) DO UPDATE SET value = excluded.value")) {
+                    "INSERT OR REPLACE INTO key_values(key, value) VALUES(?, ?)")) {
                 statement.setString(1, key);
                 statement.setString(2, value);
                 statement.executeUpdate();
